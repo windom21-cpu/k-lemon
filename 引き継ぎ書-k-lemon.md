@@ -6,7 +6,7 @@
 
 ## 概要
 
-千葉県香取市の気候(冬の最低気温 -3〜-5℃)を前提とした、初心者向けレモン家庭菜園ガイドの 1 ページサイト。鉢植え推奨、5月スタート版。本文に加えて植え付け手順のスライド版を併設。
+千葉県香取市の気候(冬の最低気温 -3〜-5℃)を前提とした、初心者向けレモン家庭菜園ガイドの 1 ページサイト。鉢植え推奨、5月スタート版。本文に加えて植え付け手順のスライド版と、自宅で実際に育てている木の成長記録ページを併設。
 
 - 公開URL: https://windom21-cpu.github.io/k-lemon/
 - スライド: https://windom21-cpu.github.io/k-lemon/planting.html
@@ -92,8 +92,6 @@ K-lemon/
 | マイヤー(Meyer)  | `#meyer`  | `#meyer-YYMMDD`  |
 | 璃の香(Rinoka)  | `#rinoka` | `#rinoka-YYMMDD` |
 
-`tr:target td{background:#ff9}` を CSS に入れているので、行アンカーへ飛ぶとその 1 行が黄色マーカーで強調される。
-
 新エントリ追加手順:
 1. 写真原本を `photo/YYMMDD<品種>.JPG` で配置
 2. `python3` + Pillow で `photo/web/<同名>.jpg` を生成(長辺 1400px / quality 85)
@@ -148,6 +146,7 @@ print(dst, im.size)" '<ファイル名>.JPG'
 - **アンカージャンプ**: 目次や本文中の青リンクをクリック → 該当箇所が黄色マーカーで点灯。ブラウザの戻る/進むで自動的にマーカーが切り替わる
 - **QR コード**: フッター「■ QR」 または セクション 10 から。サムネクリックで `qr.html` を開く(直接 png を開くと別サイトの favicon が見えてしまうのを避けるためラッパー経由)
 - **植え付けスライド**: セクション 3 冒頭リンクから。← → / PageUp PageDown / Space / Home / End で操作。ブラウザの印刷で 1 スライド = 1 ページの PDF にできる(`@media print` 設定済み)
+- **成長記録**: 目次の「▲ 成長記録」または フッター「■ 記録」から `journal.html` へ。品種別(マイヤー / 璃の香)に時系列で写真とメモを表示。写真クリックで縮小版を別タブ拡大表示
 
 ---
 
@@ -171,21 +170,23 @@ python3 -m http.server 8000
 - `index.html` フッターの `v1.X (YYYY-MM-DD)`
 - `qr.html` 末尾の `v1.X (YYYY-MM-DD)`
 - `planting.html` フッターの `v1.X (YYYY-MM-DD)`
-- 本書末尾の履歴
+- `journal.html` フッターの `v1.X (YYYY-MM-DD)`
+- 本書冒頭の「最終更新 / 現行バージョン」と末尾の履歴
 
 ブラウザキャッシュ確認用にフッター常時表示しているので、デプロイ後は Shift+リロードで「v1.X」が更新されているか目視確認する運用。
 
 ### デプロイ
 
 ```bash
-git add -A
+# PDF 等の作業用ファイルが ?? に残っていることがあるので、対象ファイルを明示するのが安全
+git add index.html planting.html journal.html qr.html photo/ 引き継ぎ書-k-lemon.md
 git commit -m "vX.Y: 概要"
 git push
 # Pages ビルド完了確認:
 gh api repos/windom21-cpu/k-lemon/pages/builds/latest --jq '.commit[0:7] + " " + .status'
 ```
 
-GitHub Actions の `pages-build-deployment` ワークフローが走る(通常 40〜60 秒)。queued が長引く場合は GitHub 側のキュー混雑なので待つ。
+GitHub Actions の `pages-build-deployment` ワークフローが走る(通常 40〜60 秒)。queued が長引く場合は GitHub 側のキュー混雑なので待つ。`git add -A` だとリポジトリ直下に残っている `*.pdf`(印刷用エクスポート等)を巻き込むので使わないこと。
 
 ### コンテンツ追加のコツ
 
@@ -199,6 +200,8 @@ GitHub Actions の `pages-build-deployment` ワークフローが走る(通常 4
 - リンク色は `a[href]` のみに限定。`<a id>` で囲んでも青くならない(`a:not([href]){color:inherit}`)
 - localStorage キー `k-lemon-checks-v1` を変える場合は、バージョン番号を `v2` 等に上げること(でないと既存ユーザーのチェックが失われる)
 - favicon を変えたら、ブラウザは origin (`windom21-cpu.github.io`) 単位でキャッシュするので k-books 等の他サイトの favicon と混ざることがある。`qr.png` を直接開くと特に発生する → `qr.html` ラッパー経由で回避済み
+- 新しい HTML を追加する場合は **必ず `<head>` 直後に `<meta charset="utf-8">`** を入れる。GitHub Pages は HTTP ヘッダで charset を補ってくれるが、ローカル `python3 -m http.server` は補わないので日本語が文字化けする(v1.7 で全 HTML に追加済み)
+- 写真は **必ず `photo/web/` の縮小版を `<img src>` に指定** する。原本(`photo/*.JPG`)を直接表示するとモバイルが数 MB ダウンロードする羽目になる。原本はクリック時の拡大用にも使わず、`photo/web/` 版を別タブで開く運用
 
 ---
 
