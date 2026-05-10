@@ -1,6 +1,6 @@
 # 引き継ぎ書 — K-lemon
 
-最終更新: 2026-05-06 / 現行バージョン: v1.6
+最終更新: 2026-05-10 / 現行バージョン: v1.7
 
 ---
 
@@ -10,6 +10,7 @@
 
 - 公開URL: https://windom21-cpu.github.io/k-lemon/
 - スライド: https://windom21-cpu.github.io/k-lemon/planting.html
+- 成長記録: https://windom21-cpu.github.io/k-lemon/journal.html
 - QRページ: https://windom21-cpu.github.io/k-lemon/qr.html
 - リポジトリ: https://github.com/windom21-cpu/k-lemon (public)
 - ローカル: `/home/sk/デスクトップ/K-lemon/`(リポ名 `k-lemon` と大文字小文字が違う点に注意)
@@ -22,6 +23,7 @@
 K-lemon/
 ├─ index.html          ← 本体ガイド(全 9 章 + QR セクション)
 ├─ planting.html       ← 植え付け手順スライド(全 12 枚)
+├─ journal.html        ← 成長記録(マイヤー・璃の香、新しい順)
 ├─ qr.html             ← QR ラッパー(favicon を保つため)
 ├─ qr.png              ← サイト URL の QR コード
 ├─ favicon.svg         ← マスター(レモン色 #F4E04D 背景に K + Slice)
@@ -30,6 +32,8 @@ K-lemon/
 ├─ favicon-48x48.png
 ├─ favicon-512x512.png ← PWA / マニフェスト用(現状 manifest.json は未配置)
 ├─ apple-touch-icon.png
+├─ photo/              ← 写真の原本(YYMMDD品種.JPG、コミット対象)
+│  └─ web/             ← Web 用に縮小したコピー(長辺 1400px / JPEG q85)。journal.html はこちらを参照
 ├─ .gitignore          ← `.claude/` を除外
 └─ 引き継ぎ書-k-lemon.md
 ```
@@ -72,6 +76,50 @@ K-lemon/
 | 8 | 初心者がやりがちな失敗 | 水・肥料・置き場所・剪定・苗・病害虫の 6 区分 |
 | 9 | 用語集 | 接ぎ木苗 / 台木 / ウォータースペース 等 22 用語 |
 | 10 | このページの QR コード | qr.png を表示、qr.html にリンク |
+
+### journal.html(成長記録)
+
+**品種別** に時系列で経過を記録するページ。品種ごとに 1 セクション・1 テーブルで、行が新しい順に積み上がる構造。表は `margin:0 auto` で画面中央配置、`<table border=1 cellpadding=3>` の二重線レトロ枠を維持(`border-collapse` は使わない)。
+
+**1 エントリ = 2 行**。日付セルを `rowspan="2"` で縦に伸ばし、右側だけ上下に分けて 1 行目に写真(`<img class="photo">`、表示幅 480px)、2 行目に素のメモ文。これにより写真とメモの境目も外枠と同じ罫線で揃い、テーブルのネスト不要。
+
+`:target` ハイライトは `tr:target td, tr:target + tr td{background:#ff9}` で id 付き行とその次のメモ行の両方を黄色に。
+
+写真は `photo/web/` の縮小版(長辺 1400px / JPEG q85)を表示、クリックで別タブ拡大。原本は `photo/` に保存。
+
+| 品種セクション | アンカー | 行アンカー命名規則 |
+|---|---|---|
+| マイヤー(Meyer)  | `#meyer`  | `#meyer-YYMMDD`  |
+| 璃の香(Rinoka)  | `#rinoka` | `#rinoka-YYMMDD` |
+
+`tr:target td{background:#ff9}` を CSS に入れているので、行アンカーへ飛ぶとその 1 行が黄色マーカーで強調される。
+
+新エントリ追加手順:
+1. 写真原本を `photo/YYMMDD<品種>.JPG` で配置
+2. `python3` + Pillow で `photo/web/<同名>.jpg` を生成(長辺 1400px / quality 85)
+3. 該当品種テーブルのヘッダ行 `<tr><th>日付<th>写真とメモ` の **直下** に 2 行 1 組のエントリを挿入(常に最新が上):
+
+   ```html
+   <tr id="<品種>-YYMMDD">
+   <td rowspan="2">YYYY-MM-DD<br>(出来事)</td>
+   <td><a href="photo/web/<ファイル>.jpg"><img src="photo/web/<ファイル>.jpg" alt="..." class="photo"></a></td>
+   <tr><td>メモ本文</td>
+   ```
+4. 新品種を増やす場合は、目次・新セクション・フッターのショートカットの 3 箇所にアンカーを追加
+
+リサイズ用ワンライナー(Pillow):
+
+```bash
+python3 -c "
+from PIL import Image, ImageOps; import os, sys
+src='photo/'+sys.argv[1]; dst='photo/web/'+os.path.splitext(sys.argv[1])[0]+'.jpg'
+im=ImageOps.exif_transpose(Image.open(src)); w,h=im.size
+s=1400/max(w,h)
+if s<1: im=im.resize((int(w*s),int(h*s)), Image.LANCZOS)
+if im.mode!='RGB': im=im.convert('RGB')
+im.save(dst,'JPEG',quality=85,optimize=True,progressive=True)
+print(dst, im.size)" '<ファイル名>.JPG'
+```
 
 ### planting.html(全 12 スライド)
 
@@ -164,3 +212,4 @@ GitHub Actions の `pages-build-deployment` ワークフローが走る(通常 4
 - **v1.4** (2026-05-06) — チェックボックスを 98.css 風 Win98 UI に(98.css のチェックボックス関連ルールのみインライン抽出)
 - **v1.5** (2026-05-06) — `<a name>` を全て `<a id>` に変換(51 箇所)、リンク先の文字色を黒に、`:target` で黄色マーカー
 - **v1.6** (2026-05-06) — `planting.html` 新設(全 12 スライド、SVG 図解付き、キーボード操作 + 印刷対応)
+- **v1.7** (2026-05-10) — `journal.html` 新設(成長記録ページ)。マイヤー・璃の香の植え付け写真を初回エントリとして追加。`photo/` に原本、`photo/web/` に Web 用縮小版(長辺 1400px / JPEG q85)。`index.html` 目次とフッターから記録ページへリンク追加。全 HTML に `<meta charset="utf-8">` を追加(GitHub Pages では問題なかったが、ローカル `python3 -m http.server` で文字化けしていたため)
